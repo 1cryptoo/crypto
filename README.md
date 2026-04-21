@@ -226,13 +226,3 @@ sudo tcpdump -xx -r capture.pcap
 sudo tcpdump -xx -r tcpsyn.pcap
 
 sudo tcpdump -xx -r tcpfin.pcap
- 
-
-sudo tcpdump -i any port 80
-Ctrl + C
-
-sudo tcpdump -n -i any 'tcp[tcpflags] & tcp-syn != 0'
-Ctrl + C
-
-sudo tcpdump -n -i any 'tcp[tcpflags] & tcp-syn != 0' -w tcpsyn.pcap
-Ctrl + C
