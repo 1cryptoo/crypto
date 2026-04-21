@@ -188,14 +188,45 @@ Ctrl + C
 sudo tcpdump -i any -w capture.pcap
 Ctrl + C
 
+# open new terminal
 ping google.com
 Ctrl + C
 
+# back to first terminal
 sudo tcpdump -i any tcp
 Ctrl + C
 
 sudo tcpdump -i any icmp
 Ctrl + C
+
+sudo tcpdump -i any port 80
+Ctrl + C
+
+sudo tcpdump -n -i any 'tcp[tcpflags] & tcp-syn != 0'
+Ctrl + C
+
+sudo tcpdump -n -i any 'tcp[tcpflags] & tcp-syn != 0' -w tcpsyn.pcap
+Ctrl + C
+
+sudo tcpdump -n -i any 'tcp[tcpflags] & tcp-ack != 0'
+Ctrl + C
+
+sudo tcpdump -n -i any 'tcp[tcpflags] & (tcp-syn|tcp-ack) != 0'
+Ctrl + C
+
+sudo tcpdump -n -i any 'tcp[tcpflags] & tcp-fin != 0' -w tcpfin.pcap
+Ctrl + C
+
+sudo tcpdump -r capture.pcap
+
+sudo tcpdump -A -r capture.pcap
+
+sudo tcpdump -xx -r capture.pcap
+
+sudo tcpdump -xx -r tcpsyn.pcap
+
+sudo tcpdump -xx -r tcpfin.pcap
+ 
 
 sudo tcpdump -i any port 80
 Ctrl + C
