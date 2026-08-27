@@ -280,52 +280,31 @@ print(result)
 *(source: cell 32, confirmed working per notebook note)*
 
 ```python
+python -m pip install -U langchain langchain-core langchain-groq langserve fastapi uvicorn jsonpatch sniffio requests-toolbelt tenacity
+
 import os
-import time
-import threading
-import uvicorn
-import nest_asyncio
 from fastapi import FastAPI
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langserve import add_routes
-# Paste your Gemini API key
 from langchain_groq import ChatGroq
-os.environ["GROQ_API_KEY"] = "YOUR KEY"
-app = FastAPI(title="LangServe Demo")
+from langserve import add_routes
 
-llm = ChatGroq(model="llama-3.1-8b-instant")
-prompt2 = ChatPromptTemplate.from_messages([
-    ("system", "You are an expert teacher in LangChain and LangServe. Explain concepts clearly for students."),
-    ("user", "{question}")
-])
-chain2 = prompt2 | llm | StrOutputParser()
+os.environ["GROQ_API_KEY"] = "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"
 
-add_routes(app, chain2, path="/chat")
-nest_asyncio.apply()
-def run_server():
-    config = uvicorn.Config(app, host="127.0.0.1", port=8000, log_level="info")
-    server = uvicorn.Server(config)
-    server.run()
-thread = threading.Thread(target=run_server, daemon=True)
-thread.start()
-time.sleep(3)
-print("Server is running at http://127.0.0.1:8000")
-print("Test route: http://127.0.0.1:8000/chat/invoke")
-```
+prompt = ChatPromptTemplate.from_template("Answer briefly: {question}")
 
-Testing the LangServe endpoint *(source: cell 34)*
+llm = ChatGroq(model="openai/gpt-oss-20b")
 
-```python
-import requests
+chain = prompt | llm | StrOutputParser()
 
-response = requests.post(
-    "http://127.0.0.1:8000/chat/invoke",
-    json={"input": {"question": "What is LangServe?"}}
-)
+app = FastAPI(title="Agentic AI API")
 
-print(response.json())
+add_routes(app, chain, path="/chat")
+
+
+
+#save as app.py
+#python -m uvicorn app:app
 ```
 
 ### Q4. Build a Self-correcting Coding Assistant with LangChain
