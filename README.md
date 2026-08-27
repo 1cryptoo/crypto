@@ -8,23 +8,16 @@ One section per question from `lab_exam_questions.docx`, each mapped to its sour
 *(source: cell 4)*
 
 ```python
-# ==========================================================
-# SIMPLE AI AGENT USING AGNO + GROQ + YFINANCE
-# ==========================================================
-
-# Run once if needed:
+!pip install -U agno groq yfinance python-dotenv
 # !pip install -U agno groq yfinance python-dotenv
 
 import os
 from agno.agent import Agent
 from agno.models.groq import Groq
 from agno.tools.yfinance import YFinanceTools
-os.environ["GROQ_API_KEY"] = "API Key"
-# ----------------------------------------------------------
-# CREATE AI AGENT
-# ----------------------------------------------------------
+os.environ["GROQ_API_KEY"] = ""
 agent = Agent(
-    model=Groq(id="llama-3.3-70b-versatile"),
+    model=Groq(id="openai/gpt-oss-20b"),
     tools=[
         YFinanceTools(
             enable_stock_price=True,
@@ -47,10 +40,6 @@ agent = Agent(
     markdown=True
 )
 
-# ----------------------------------------------------------
-# ASK QUESTION
-# ----------------------------------------------------------
-
 agent.print_response(
     "Generate a detailed report on NVIDIA (NVDA)",
     stream=True
@@ -70,14 +59,14 @@ agent.print_response(
 from groq import Groq
 
 client = Groq(
-    api_key="API KEY"
+    api_key=""
 )
 
 question = "Explain Agentic AI in one sentence."
 
 # First answer
 answer = client.chat.completions.create(
-    model="llama-3.3-70b-versatile",
+    model="openai/gpt-oss-20b",
     messages=[
         {"role":"user","content":question}
     ]
@@ -90,7 +79,7 @@ print(first_response)
 
 # Reflection
 reflection = client.chat.completions.create(
-    model="llama-3.3-70b-versatile",
+    model="openai/gpt-oss-20b",
     messages=[
         {
             "role":"user",
@@ -116,11 +105,11 @@ print(reflection.choices[0].message.content)
 from groq import Groq
 
 client = Groq(
-    api_key="API KEY"
+    api_key=""
 )
 
 response = client.chat.completions.create(
-    model="llama-3.3-70b-versatile",
+    model="openai/gpt-oss-20b",
     messages=[
         {
             "role":"user",
@@ -144,11 +133,11 @@ print(response.choices[0].message.content)
 from groq import Groq
 
 client = Groq(
-    api_key="API KEY"
+    api_key=""
 )
 
 response = client.chat.completions.create(
-    model="llama-3.3-70b-versatile",
+    model="openai/gpt-oss-20b",
     messages=[
         {
             "role":"user",
@@ -177,11 +166,11 @@ print(response.choices[0].message.content)
 from groq import Groq
 
 client = Groq(
-    api_key="API KEY"
+    api_key=""
 )
 
 researcher = client.chat.completions.create(
-    model="llama-3.3-70b-versatile",
+    model="openai/gpt-oss-20b",
     messages=[
         {
             "role":"user",
@@ -191,7 +180,7 @@ researcher = client.chat.completions.create(
 )
 
 writer = client.chat.completions.create(
-    model="llama-3.3-70b-versatile",
+    model="openai/gpt-oss-20b",
     messages=[
         {
             "role":"user",
@@ -206,7 +195,7 @@ Create a report from:
 )
 
 reviewer = client.chat.completions.create(
-    model="llama-3.3-70b-versatile",
+    model="openai/gpt-oss-20b",
     messages=[
         {
             "role":"user",
@@ -227,27 +216,18 @@ print(reviewer.choices[0].message.content)
 *(source: cell 14)*
 
 ```python
-# ==========================================================
-# REWOO PATTERN USING GROQ
-# Reasoning Without Observation
-# ==========================================================
-
 from groq import Groq
 
 client = Groq(
-    api_key="API KEY"
+    api_key=""
 )
 
 user_query = """
 Create a report about Artificial Intelligence.
 """
 
-# --------------------------------------------------
-# STEP 1: PLAN FIRST
-# --------------------------------------------------
-
 planner = client.chat.completions.create(
-    model="llama-3.3-70b-versatile",
+    model="openai/gpt-oss-20b",
     messages=[
         {
             "role":"user",
@@ -272,12 +252,8 @@ plan = planner.choices[0].message.content
 print("\n========== GENERATED PLAN ==========\n")
 print(plan)
 
-# --------------------------------------------------
-# STEP 2: EXECUTE PLAN
-# --------------------------------------------------
-
 executor = client.chat.completions.create(
-    model="llama-3.3-70b-versatile",
+    model="openai/gpt-oss-20b",
     messages=[
         {
             "role":"user",
@@ -358,99 +334,64 @@ print(response.json())
 ```python
 !pip install -q langchain langchain-core langchain-groq
 
-import os
-import subprocess
-import tempfile
+import os, subprocess, tempfile
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-os.environ["GROQ_API_KEY"] = "your key"
+os.environ["GROQ_API_KEY"] = ""
 
-llm = ChatGroq(model="llama-3.1-8b-instant")
+llm = ChatGroq(model="openai/gpt-oss-20b")
 
-code_prompt = ChatPromptTemplate.from_messages([
-    ("system",
-     "You are an expert Python coding assistant. "
-     "Generate only executable Python code. "
-     "Do not use markdown. Do not explain."),
+generate = ChatPromptTemplate.from_messages([
+    ("system", "Generate only executable Python code. No markdown or explanation."),
     ("user", "{task}")
-])
+]) | llm | StrOutputParser()
 
-fix_prompt = ChatPromptTemplate.from_messages([
-    ("system",
-     "You are a self-correcting Python coding assistant. "
-     "Fix the given code using the error message. "
-     "Return only corrected executable Python code. "
-     "Do not use markdown. Do not explain."),
-    ("user",
-     "Task:\n{task}\n\nCode:\n{code}\n\nError:\n{error}")
-])
-
-code_chain = code_prompt | llm | StrOutputParser()
-fix_chain = fix_prompt | llm | StrOutputParser()
+fix = ChatPromptTemplate.from_messages([
+    ("system", "Fix the Python code using the error. Return only executable code."),
+    ("user", "Task: {task}\nCode:\n{code}\nError:\n{error}")
+]) | llm | StrOutputParser()
 
 
-def clean_code(code):
-    code = code.replace("```python", "").replace("```", "")
-    return code.strip()
-
-
-def run_python_code(code):
+def run(code):
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
         f.write(code)
-        file_path = f.name
+        path = f.name
 
-    result = subprocess.run(
-        ["python", file_path],
-        capture_output=True,
-        text=True,
-        timeout=10
-    )
-
-    if result.returncode == 0:
-        return True, result.stdout
-    else:
-        return False, result.stderr
+    r = subprocess.run(["python", path], capture_output=True, text=True)
+    return r.returncode == 0, r.stdout or r.stderr
 
 
-def self_correcting_coding_assistant(task, max_attempts=3):
-    print("USER TASK:")
-    print(task)
-    print("\nGenerating code...\n")
+def assistant(task, attempts=3):
+    code = generate.invoke({"task": task}).replace("python", "").replace("", "").strip()
 
-    code = clean_code(code_chain.invoke({"task": task}))
-
-    # Intentionally inject a bug for demonstration
+    # Add an intentional error for demonstration
     if "factorial" in task.lower():
-      code = code.replace("factorial(5)", "fact(5)")
-    for attempt in range(1, max_attempts + 1):
-        print(f"\nAttempt {attempt}")
-        print("-" * 40)
-        print(code)
+        code = code.replace("factorial(5)", "fact(5)")
 
-        success, output = run_python_code(code)
+    for i in range(attempts):
+        print(f"\nAttempt {i + 1}:\n{code}")
+
+        success, output = run(code)
 
         if success:
-            print("\nCode executed successfully!")
-            print("\nOUTPUT:")
-            print(output)
-            return code
+            print("\nOUTPUT:", output)
+            print("FINAL CODE:\n", code)
+            return
 
-        print("\nError found:")
-        print(output)
+        print("\nERROR:", output)
 
-        print("\nCorrecting code...\n")
-        code = clean_code(
-            fix_chain.invoke({
-                "task": task,
-                "code": code,
-                "error": output
-            })
-        )
+        code = fix.invoke({
+            "task": task,
+            "code": code,
+            "error": output
+        }).replace("python", "").replace("", "").strip()
 
-    print("\nCould not fix the code within max attempts.")
-    return code
+    print("\nCould not fix the code.")
+
+
+assistant("Write a Python program to calculate the factorial of 5")
 ```
 
 Run the assistant *(source: cell 49)*
@@ -546,7 +487,7 @@ from llama_index.core import Document, VectorStoreIndex, Settings
 from llama_index.core.embeddings import MockEmbedding
 from llama_index.llms.openai_like import OpenAILike
 # Groq API key
-os.environ["GROQ_API_KEY"] = "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"
+os.environ["GROQ_API_KEY"] = ""
 # Use Groq with OpenAI-compatible endpoint
 Settings.llm = OpenAILike(
     model="openai/gpt-oss-120b",
@@ -595,7 +536,7 @@ import cohere
 import numpy as np
 import pandas as pd
 # 1. Set Cohere API Key
-os.environ["COHERE_API_KEY"] = "YOUR KEY"
+os.environ["COHERE_API_KEY"] = ""
 co = cohere.ClientV2(api_key=os.environ["COHERE_API_KEY"])
 # 2. Market research knowledge base
 documents = [
@@ -698,6 +639,7 @@ print(answer)
 *(source: cell 66)*
 
 ```python
+%pip install -U phidata
 import os
 import pandas as pd
 
@@ -705,7 +647,7 @@ from phi.agent import Agent
 from phi.model.groq import Groq
 
 # Use your NEW Groq API key
-os.environ["GROQ_API_KEY"] = "Your key"
+os.environ["GROQ_API_KEY"] = ""
 
 # Sample sales data
 df = pd.DataFrame({
@@ -724,7 +666,7 @@ data_text = df.to_string(index=False)
 # Create Phidata agent
 data_agent = Agent(
     name="Data Analysis Agent",
-    model=Groq(id="llama-3.1-8b-instant"),
+    model=Groq(id="openai/gpt-oss-120b"),
     instructions=[
         "You are a data analysis assistant.",
         "Analyze the given sales data carefully.",
@@ -758,6 +700,7 @@ print(response.content)
 *(source: cell 84)*
 
 ```python
+%pip install -U langgraph langchain langchain-core langchain-groq ipython
 import os
 from typing import TypedDict
 from langgraph.graph import StateGraph, END
@@ -766,10 +709,10 @@ from langchain_core.messages import HumanMessage
 from IPython.display import Image, display
 
 # Add your Groq API key
-os.environ["GROQ_API_KEY"] = "YOUR KEY"
+os.environ["GROQ_API_KEY"] = ""
 
 llm = ChatGroq(
-    model="llama-3.1-8b-instant",
+    model="openai/gpt-oss-120b",
     temperature=0
 )
 
@@ -977,27 +920,20 @@ print(result)
 import os
 from autogen import AssistantAgent, UserProxyAgent
 
-# ------------------------------------
-# 1. Set Groq API Key
-# ------------------------------------
-os.environ["GROQ_API_KEY"] = "your_groq_api_key"
 
-# ------------------------------------
-# 2. Configure LLM
-# ------------------------------------
+os.environ["GROQ_API_KEY"] = ""
+
+
 llm_config = {
     "config_list": [
         {
-            "model": "llama-3.1-8b-instant",
+            "model": "openai/gpt-oss-20b",
             "api_key": os.environ["GROQ_API_KEY"],
             "base_url": "https://api.groq.com/openai/v1"
         }
     ]
 }
 
-# ------------------------------------
-# 3. Create AI Research Agent
-# ------------------------------------
 research_agent = AssistantAgent(
     name="Research_Agent",
     system_message="""
@@ -1013,9 +949,7 @@ Your task is to:
     llm_config=llm_config,
 )
 
-# ------------------------------------
-# 4. Create User Proxy Agent
-# ------------------------------------
+
 user_proxy = UserProxyAgent(
     name="User_Proxy",
 
@@ -1028,9 +962,6 @@ user_proxy = UserProxyAgent(
     }
 )
 
-# ------------------------------------
-# 5. Start Research Task
-# ------------------------------------
 user_proxy.initiate_chat(
     research_agent,
     message="""
@@ -1061,28 +992,21 @@ Prepare a short research report containing:
 import os
 from langchain_groq import ChatGroq
 
-# -----------------------------
-# 1. API Keys
-# -----------------------------
-os.environ["GROQ_API_KEY"] = "YOUR_GROQ_API_KEY"
-os.environ["LANGSMITH_API_KEY"] = "YOUR_LANGSMITH_API_KEY"
 
-# Enable LangSmith tracing
+os.environ["GROQ_API_KEY"] = ""
+os.environ["LANGSMITH_API_KEY"] = ""
+
+
 os.environ["LANGSMITH_TRACING"] = "true"
 
-# Optional: project name shown in LangSmith
+
 os.environ["LANGSMITH_PROJECT"] = "AI-Observability-Demo"
 
-# -----------------------------
-# 2. Create LLM
-# -----------------------------
+
 llm = ChatGroq(
-    model="llama-3.1-8b-instant"
+    model="openai/gpt-oss-20b"
 )
 
-# -----------------------------
-# 3. Call the model
-# -----------------------------
 response = llm.invoke(
     "Explain Artificial Intelligence in two sentences."
 )
