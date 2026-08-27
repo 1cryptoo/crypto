@@ -539,16 +539,17 @@ print(result["answer"])
 *(source: cell 63)*
 
 ```python
+%pip install llama-index llama-index-llms-openai-like
 import os
 import pandas as pd
 from llama_index.core import Document, VectorStoreIndex, Settings
 from llama_index.core.embeddings import MockEmbedding
 from llama_index.llms.openai_like import OpenAILike
 # Groq API key
-os.environ["GROQ_API_KEY"] = "YOUR KEY"
+os.environ["GROQ_API_KEY"] = "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"
 # Use Groq with OpenAI-compatible endpoint
 Settings.llm = OpenAILike(
-    model="llama-3.1-8b-instant",
+    model="openai/gpt-oss-120b",
     api_base="https://api.groq.com/openai/v1",
     api_key=os.environ["GROQ_API_KEY"],
     is_chat_model=True,
