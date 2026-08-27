@@ -691,132 +691,87 @@ print(response.content)
 
 ```python
 %pip install -U langgraph langchain langchain-core langchain-groq ipython
+# Install required packages
+%pip install -U langgraph langchain-core langchain-groq ipython
+
 import os
 from typing import TypedDict
+
 from langgraph.graph import StateGraph, END
-from langchain_groq import ChatGroq
-from langchain_core.messages import HumanMessage
 from IPython.display import Image, display
 
-# Add your Groq API key
-os.environ["GROQ_API_KEY"] = ""
+os.environ["GROQ_API_KEY"] = "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"
 
-llm = ChatGroq(
-    model="openai/gpt-oss-120b",
-    temperature=0
-)
-
-class ChatState(TypedDict):
+class SupportState(TypedDict):
     query: str
     category: str
-    response: str
+    answer: str
 
-def router_agent(state):
-    query = state["query"]
+def router(state):
+    text = state["query"].lower()
 
-    prompt = f"""
-Classify this customer query into one category:
-faq, order, or complaint.
-
-Query: {query}
-
-Return only one word.
-"""
-    result = llm.invoke([HumanMessage(content=prompt)])
-    category = result.content.strip().lower()
-
-    if "order" in category:
-        category = "order"
-    elif "complaint" in category:
+    if "damaged" in text:
         category = "complaint"
+    elif "order" in text:
+        category = "order"
     else:
         category = "faq"
 
     return {"category": category}
 
-def faq_agent(state):
-    query = state["query"]
+def faq(state):
+    return {
+        "answer": "Please see our FAQ page."
+    }
 
-    prompt = f"""
-You are an FAQ support agent.
-Answer this customer question politely:
+def order(state):
+    return {
+        "answer": "Please provide your order ID."
+    }
 
-{query}
-"""
-    result = llm.invoke([HumanMessage(content=prompt)])
-    return {"response": result.content}
+def complaint(state):
+    return {
+        "answer": "Sorry about that. We will arrange a replacement."
+    }
 
-def order_agent(state):
-    query = state["query"]
+graph = StateGraph(SupportState)
 
-    prompt = f"""
-You are an order support agent.
-Help the customer with order-related query.
-If order ID is missing, ask for it politely.
+graph.add_node("router", router)
+graph.add_node("faq", faq)
+graph.add_node("order", order)
+graph.add_node("complaint", complaint)
 
-Query: {query}
-"""
-    result = llm.invoke([HumanMessage(content=prompt)])
-    return {"response": result.content}
+graph.set_entry_point("router")
 
-def complaint_agent(state):
-    query = state["query"]
-
-    prompt = f"""
-You are a complaint support agent.
-Apologize politely and suggest the next step.
-
-Complaint: {query}
-"""
-    result = llm.invoke([HumanMessage(content=prompt)])
-    return {"response": result.content}
-
-def route(state):
-    if state["category"] == "order":
-        return "Order_Agent"
-    elif state["category"] == "complaint":
-        return "Complaint_Agent"
-    else:
-        return "FAQ_Agent"
-
-workflow = StateGraph(ChatState)
-
-workflow.add_node("Router_Agent", router_agent)
-workflow.add_node("FAQ_Agent", faq_agent)
-workflow.add_node("Order_Agent", order_agent)
-workflow.add_node("Complaint_Agent", complaint_agent)
-
-workflow.set_entry_point("Router_Agent")
-
-workflow.add_conditional_edges(
-    "Router_Agent",
-    route,
+# Router → appropriate agent
+graph.add_conditional_edges(
+    "router",
+    lambda state: state["category"],
     {
-        "FAQ_Agent": "FAQ_Agent",
-        "Order_Agent": "Order_Agent",
-        "Complaint_Agent": "Complaint_Agent"
+        "faq": "faq",
+        "order": "order",
+        "complaint": "complaint"
     }
 )
 
-workflow.add_edge("FAQ_Agent", END)
-workflow.add_edge("Order_Agent", END)
-workflow.add_edge("Complaint_Agent", END)
+# Agents → END
+graph.add_edge("faq", END)
+graph.add_edge("order", END)
+graph.add_edge("complaint", END)
 
-app = workflow.compile()
-display(Image(app.get_graph().draw_mermaid_png()))
+support_bot = graph.compile()
 
-# Test chatbot
-query = "I received a damaged product"
+display(
+    Image(
+        support_bot.get_graph().draw_mermaid_png()
+    )
+)
 
-result = app.invoke({
-    "query": query,
-    "category": "",
-    "response": ""
+result = support_bot.invoke({
+    "query": "My item is damaged"
 })
 
-print("User Query:", query)
-print("Category:", result["category"])
-print("Bot Response:", result["response"])
+print(result["answer"])
 ```
 
 ### Q10. Design a Stock Analysis Agent with CrewAI
