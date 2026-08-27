@@ -311,66 +311,85 @@ add_routes(app, chain, path="/chat")
 *(source: cells 48–49)*
 
 ```python
-!pip install -q langchain langchain-core langchain-groq
+import os
+os.environ["GROQ_API_KEY"] = "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"
 
-import os, subprocess, tempfile
-from langchain_groq import ChatGroq
-from langchain_core.prompts import ChatPromptTemplate
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_groq import ChatGroq
 
-os.environ["GROQ_API_KEY"] = ""
 
+# LLM
 llm = ChatGroq(model="openai/gpt-oss-20b")
 
-generate = ChatPromptTemplate.from_messages([
-    ("system", "Generate only executable Python code. No markdown or explanation."),
-    ("user", "{task}")
-]) | llm | StrOutputParser()
 
-fix = ChatPromptTemplate.from_messages([
-    ("system", "Fix the Python code using the error. Return only executable code."),
-    ("user", "Task: {task}\nCode:\n{code}\nError:\n{error}")
-]) | llm | StrOutputParser()
+# Generate code
+generate = ChatPromptTemplate.from_template(
+    "Write only Python code for this task: {task}"
+) | llm | StrOutputParser()
 
 
+# Fix code
+repair = ChatPromptTemplate.from_template(
+    "Fix this Python code. Return code only.\nCode:\n{code}\nError:\n{error}"
+) | llm | StrOutputParser()
+
+
+# Remove ```python ``` from LLM response
+def clean(code):
+    return code.replace("```python", "").replace("```", "").strip()
+
+
+# Run Python code
 def run(code):
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-        f.write(code)
-        path = f.name
+    path = Path(tempfile.gettempdir()) / "agent_answer.py"
+    path.write_text(code)
 
-    r = subprocess.run(["python", path], capture_output=True, text=True)
-    return r.returncode == 0, r.stdout or r.stderr
+    return subprocess.run(
+        [sys.executable, str(path)],
+        capture_output=True,
+        text=True
+    )
 
 
-def assistant(task, attempts=3):
-    code = generate.invoke({"task": task}).replace("python", "").replace("", "").strip()
+# Generate first code
+code = clean(
+    generate.invoke({
+        "task": "Print the factorial of 5."
+    })
+)
 
-    # Add an intentional error for demonstration
-    if "factorial" in task.lower():
-        code = code.replace("factorial(5)", "fact(5)")
 
-    for i in range(attempts):
-        print(f"\nAttempt {i + 1}:\n{code}")
+# Self-correction loop
+for attempt in range(1, 4):
 
-        success, output = run(code)
+    print(f"\nAttempt {attempt}:")
+    print(code)
 
-        if success:
-            print("\nOUTPUT:", output)
-            print("FINAL CODE:\n", code)
-            return
+    result = run(code)
 
-        print("\nERROR:", output)
+    if result.returncode == 0:
+        print("\nOUTPUT:")
+        print(result.stdout)
 
-        code = fix.invoke({
-            "task": task,
+        print("FINAL CODE:")
+        print(code)
+        break
+
+    print("\nERROR:")
+    print(result.stderr)
+
+    code = clean(
+        repair.invoke({
             "code": code,
-            "error": output
-        }).replace("python", "").replace("", "").strip()
-
-    print("\nCould not fix the code.")
-
-
-assistant("Write a Python program to calculate the factorial of 5")
+            "error": result.stderr
+        })
+    )
 ```
 
 Run the assistant *(source: cell 49)*
