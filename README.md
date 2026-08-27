@@ -392,14 +392,6 @@ for attempt in range(1, 4):
     )
 ```
 
-Run the assistant *(source: cell 49)*
-
-```python
-final_code = self_correcting_coding_assistant(
-    "Write Python code to calculate factorial of 5 using recursion."
-)
-```
-
 ### Q5. Building a Finance Bot with LangGraph
 *(source: cell 51)*
 
